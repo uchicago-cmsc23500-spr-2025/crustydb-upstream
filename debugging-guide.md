@@ -1,5 +1,8 @@
 # CrustyDB: Page Debugging Guide
 
+Note this guide is a bit stale, so parts of the code / references might be out of 
+date, but the key ideas should still be useful.
+
 ## Overview
 This milestone focuses on implementing a **page**, a fixed size data structure
 that holds records of varying sizes. You will construct this data structure,
