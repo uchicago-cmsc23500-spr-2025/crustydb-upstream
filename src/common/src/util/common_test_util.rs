@@ -32,12 +32,10 @@ pub fn init() {
         .try_init();
 }
 
-
 pub fn get_random_byte_vec(rng: &mut SmallRng, n: usize) -> Vec<u8> {
     let random_bytes: Vec<u8> = (0..n).map(|_| rng.random::<u8>()).collect();
     random_bytes
 }
-
 
 pub fn get_random_vec_of_byte_vec(
     rng: &mut SmallRng,
@@ -245,5 +243,4 @@ mod test {
             );
         }
     }
-
 }

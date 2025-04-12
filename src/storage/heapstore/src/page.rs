@@ -21,7 +21,6 @@ pub const OFFSET_NUM_BYTES: usize = mem::size_of::<Offset>();
 /// For debugging purposes only
 const BYTES_PER_LINE: usize = 40;
 
-
 #[allow(dead_code)]
 pub const PAGE_ID_SIZE: usize = mem::size_of::<PageId>();
 #[allow(dead_code)]

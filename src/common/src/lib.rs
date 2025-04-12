@@ -27,8 +27,6 @@ pub mod prelude {
         ColumnId, ContainerId, LogicalTimeStamp, Lsn, PageId, SlotId, StateType, TidType,
         TransactionId, ValueId,
     };
-
 }
 
 pub use crate::error::{ConversionError, CrustyError};
-

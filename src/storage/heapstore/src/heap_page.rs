@@ -88,7 +88,6 @@ pub trait HeapPage {
 }
 
 impl HeapPage for Page {
-
     fn init_heap_page(&mut self) {
         //TODO milestone pg
         //Add any initialization code here

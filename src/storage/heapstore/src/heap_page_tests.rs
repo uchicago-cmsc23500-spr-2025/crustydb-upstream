@@ -2,7 +2,6 @@
 mod tests {
     use std::collections::VecDeque;
 
-
     use crate::page::Page;
     use crate::page::PAGE_FIXED_HEADER_LEN;
 
@@ -315,7 +314,6 @@ mod tests {
         assert_eq!(new_bytes, check_bytes);
         vals[4] = new_bytes.clone();
     }
-
 
     #[test]
     fn hs_page_delete_insert() {
@@ -700,5 +698,4 @@ mod tests {
             }
         }
     }
-
 }
