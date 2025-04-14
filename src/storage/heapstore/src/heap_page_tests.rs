@@ -38,7 +38,8 @@ mod tests {
     #[test]
     fn hs_page_sizes_header_free_space() {
         init();
-        let p = Page::new(0);
+        let mut p = Page::new(0);
+        p.init_heap_page();
         assert_eq!(0, p.get_page_id());
 
         assert_eq!(PAGE_SIZE - p.get_header_size(), p.get_free_space());
