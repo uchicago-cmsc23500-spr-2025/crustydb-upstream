@@ -5,3 +5,9 @@ members = [
     "src/common",
     "src/storage",
 ]
+
+[profile.release]
+debug = true
+lto = true
+panic = 'abort'
+codegen-units = 1
