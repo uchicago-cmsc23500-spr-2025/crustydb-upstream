@@ -4,8 +4,22 @@ extern crate serde;
 #[macro_use]
 extern crate log;
 
+pub mod attribute;
+pub use attribute::Attribute;
+pub use attribute::Constraint;
+pub mod catalog;
+pub mod commands;
+pub mod datatypes;
 pub mod error;
 pub mod ids;
+pub mod physical;
+pub mod rwlatch;
+pub mod table;
+pub use table::TableSchema;
+pub mod traits;
+pub mod tuple;
+pub use tuple::Tuple;
+pub mod query;
 pub mod util;
 pub use util::common_test_util as testutil;
 
@@ -30,3 +44,6 @@ pub mod prelude {
 }
 
 pub use crate::error::{ConversionError, CrustyError};
+
+pub use crate::datatypes::{DataType, Field};
+pub use query::query_result::QueryResult;

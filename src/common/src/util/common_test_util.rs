@@ -37,6 +37,15 @@ pub fn get_random_byte_vec(rng: &mut SmallRng, n: usize) -> Vec<u8> {
     random_bytes
 }
 
+pub fn gen_random_int<T>(rng: &mut SmallRng, min: T, max: T) -> T
+where
+    T: rand::distr::uniform::SampleUniform,
+{
+    // let mut rng = rng();
+    rng.sample(rand::distr::uniform::Uniform::new_inclusive(min, max).unwrap())
+}
+
+#[allow(dead_code)]
 pub fn get_random_vec_of_byte_vec(
     rng: &mut SmallRng,
     n: usize,
@@ -57,6 +66,7 @@ pub fn get_random_vec_of_byte_vec(
     res
 }
 
+#[allow(dead_code)]
 /// get_ascending_vec_of_byte_vec_0x: this function will create Vec<Vec<u8>>
 /// the value of u8 in Vec<u8> is ascending from 1 to 16 (0x10) for each Vec<u8>
 pub fn get_ascending_vec_of_byte_vec_0x(
@@ -84,6 +94,7 @@ pub fn get_ascending_vec_of_byte_vec_0x(
     res
 }
 
+#[allow(dead_code)]
 /// get_ascending_vec_of_byte_vec_0x: this function will create Vec<Vec<u8>>
 /// the value of u8 in Vec<u8> is ascending from 1 to 255 (0x100) for each Vec<u8>
 pub fn get_ascending_vec_of_byte_vec_02x(
@@ -112,6 +123,7 @@ pub fn get_ascending_vec_of_byte_vec_02x(
     res
 }
 
+#[allow(dead_code)]
 pub fn compare_unordered_byte_vecs(a: &[Vec<u8>], mut b: Vec<Vec<u8>>) -> bool {
     // Quick check
     if a.len() != b.len() {
@@ -152,7 +164,6 @@ pub fn compare_unordered_byte_vecs(a: &[Vec<u8>], mut b: Vec<Vec<u8>>) -> bool {
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::collections::HashMap;
 
     #[test]
     fn test_random_vec_bytes() {
