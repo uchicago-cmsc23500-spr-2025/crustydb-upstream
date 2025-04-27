@@ -2,11 +2,11 @@ use crate::file_stats::FileStats;
 use crate::page::Page;
 use common::ids::{ContainerId, PageId};
 use common::PAGE_SIZE;
-use std::path::PathBuf;
 use libc::{c_void, fsync, pread, pwrite};
 use std::fs::{File, OpenOptions};
 use std::mem::MaybeUninit;
 use std::os::unix::io::AsRawFd;
+use std::path::PathBuf;
 
 /// BaseFileTrait is a trait that defines the methods that are required to manage the file that is used to store the pages.
 pub trait BaseFileTrait: Send + Sync {
