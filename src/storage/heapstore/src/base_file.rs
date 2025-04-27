@@ -2,8 +2,9 @@ use crate::file_stats::FileStats;
 use crate::page::Page;
 use common::ids::{ContainerId, PageId};
 use common::PAGE_SIZE;
+use std::path::PathBuf;
 use libc::{c_void, fsync, pread, pwrite};
-use std::fs::OpenOptions;
+use std::fs::{File, OpenOptions};
 use std::mem::MaybeUninit;
 use std::os::unix::io::AsRawFd;
 
@@ -24,6 +25,8 @@ pub trait BaseFileTrait: Send + Sync {
 /// BaseFile is a structure that is used to manage the file that is used to store the pages.
 /// It is responsible for reading and writing pages to the file.
 pub struct BaseFile {
+    _path: PathBuf,
+    _file: File, // When this file is dropped, the file descriptor (file_no) will be invalid.
     stats: FileStats,
     file_no: i32,
     direct: bool,
@@ -44,6 +47,8 @@ impl BaseFile {
             .open(&path)?;
         let file_no = file.as_raw_fd();
         Ok(BaseFile {
+            _path: path,
+            _file: file,
             stats: FileStats::new(),
             file_no,
             direct: true,
