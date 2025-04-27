@@ -162,20 +162,61 @@ impl BufferPool {
         self.latch.release_exclusive();
     }
 
-    /// Choose a victim frame to be evicted.
-    /// If all the frames are latched, then return None.
-    fn choose_victim(&self) -> Option<FrameWriteGuard> {
+    /// Choose a frame to be evicted.
+    fn choose_eviction_candidate(&self) -> Option<FrameWriteGuard> {
         // 33550 ONLY
         //TODO last milestone NOT hs
         None
     }
 
-    /// Choose multiple victims to be evicted
+    /// Choose a victim frame to be used for allocating a new page.
+    /// If all the frames are latched, then return None.
+    fn choose_victim(&self) -> Option<FrameWriteGuard> {
+        let frames = unsafe { &*self.frames.get() };
+
+        // First, try the eviction hints
+        while let Ok(victim) = self.eviction_hints.pop() {
+            let frame = frames[victim].try_write(false);
+            if let Some(guard) = frame {
+                return Some(guard);
+            } else {
+                // The frame is latched. Try the next frame.
+            }
+        }
+
+        self.choose_eviction_candidate()
+    }
+
+    /// Choose multiple victim frames to be used for allocating new pages.
     /// The returned vector may contain fewer frames thant he requested number of victims.
     /// It can also return an empty vector.
     fn choose_victims(&self, num_victims: usize) -> Vec<FrameWriteGuard> {
-        // 33550 ONLY
-        panic!("TODO milestone hs");
+        let frames = unsafe { &*self.frames.get() };
+        let num_victims = frames.len().min(num_victims);
+        let mut victims = Vec::with_capacity(num_victims);
+
+        // First, try the eviction hints
+        while let Ok(victim) = self.eviction_hints.pop() {
+            let frame = frames[victim].try_write(false);
+            if let Some(guard) = frame {
+                victims.push(guard);
+                if victims.len() == num_victims {
+                    return victims;
+                }
+            } else {
+                // The frame is latched. Try the next frame.
+            }
+        }
+
+        while victims.len() < num_victims {
+            if let Some(victim) = self.choose_eviction_candidate() {
+                victims.push(victim);
+            } else {
+                break;
+            }
+        }
+
+        victims
     }
 
     // The exclusive latch is NOT NEEDED when calling this function
