@@ -22,7 +22,7 @@ mod test {
     #[test]
     fn hs_hf_one_insertion_one_lookup() {
         let cid = 0;
-        let bp = get_test_bp(100);
+        let bp = get_test_bp(1000);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(1)[0].clone();
@@ -37,7 +37,7 @@ mod test {
     #[test]
     fn hs_hf_insert_ge_lookup() {
         let cid = 0;
-        let bp = get_test_bp(100);
+        let bp = get_test_bp(1000);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(10000);
@@ -55,7 +55,7 @@ mod test {
     #[test]
     fn hs_hfiter_insert_and_iterate() {
         let cid = 0;
-        let bp = get_test_bp(100);
+        let bp = get_test_bp(1000);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(10000);
@@ -73,7 +73,7 @@ mod test {
     #[test]
     fn hs_hfiter_insert_drop_and_load() {
         let cid = 0;
-        let bp = get_test_bp(100);
+        let bp = get_test_bp(1000);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(10000);
