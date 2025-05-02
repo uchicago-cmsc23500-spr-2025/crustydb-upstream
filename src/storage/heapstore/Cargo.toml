@@ -13,6 +13,7 @@ edition = "2021"
 default = ["profile", "stat"]
 profile = []
 stat = []
+hs_33500 = []
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

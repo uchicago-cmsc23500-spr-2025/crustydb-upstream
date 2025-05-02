@@ -19,10 +19,15 @@ mod test {
             .collect::<Vec<Vec<u8>>>()
     }
 
+    #[cfg(feature = "hs_33500")]
+    const BP_FRAMES: usize = 100;
+    #[cfg(not(feature = "hs_33500"))]
+    const BP_FRAMES: usize = 1000;
+
     #[test]
     fn hs_hf_one_insertion_one_lookup() {
         let cid = 0;
-        let bp = get_test_bp(1000);
+        let bp = get_test_bp(BP_FRAMES);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(1)[0].clone();
@@ -32,12 +37,14 @@ mod test {
             .get_val(val_id.page_id.unwrap(), val_id.slot_id.unwrap())
             .unwrap();
         assert_eq!(val, to_insert);
+        #[cfg(not(feature = "hs_33500"))]
+        assert!(bp.count_empty_frames() > 0 && bp.disk_size() == 0);
     }
 
     #[test]
     fn hs_hf_insert_ge_lookup() {
         let cid = 0;
-        let bp = get_test_bp(1000);
+        let bp = get_test_bp(BP_FRAMES);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(10000);
@@ -50,12 +57,16 @@ mod test {
                 .unwrap();
             assert_eq!(val, to_insert[i], "Failed at val_id: {:?}", val_ids[i]);
         }
+        #[cfg(not(feature = "hs_33500"))]
+        assert!(bp.count_empty_frames() > 0 && bp.disk_size() == 0);
+        #[cfg(feature = "hs_33500")]
+        assert!(bp.disk_size() > 0, "Eviction not working");
     }
 
     #[test]
     fn hs_hfiter_insert_and_iterate() {
         let cid = 0;
-        let bp = get_test_bp(1000);
+        let bp = get_test_bp(BP_FRAMES);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(10000);
@@ -68,12 +79,16 @@ mod test {
             let (val, val_id) = hf_iter_result;
             assert_eq!(&val, expected, "Failed at val_id: {:?}", val_id);
         }
+        #[cfg(not(feature = "hs_33500"))]
+        assert!(bp.count_empty_frames() > 0 && bp.disk_size() == 0);
+        #[cfg(feature = "hs_33500")]
+        assert!(bp.disk_size() > 0, "Eviction not working");
     }
 
     #[test]
     fn hs_hfiter_insert_drop_and_load() {
         let cid = 0;
-        let bp = get_test_bp(1000);
+        let bp = get_test_bp(BP_FRAMES);
         let hf = Arc::new(HeapFile::new(cid, bp.clone()).unwrap());
 
         let to_insert = gen_values(10000);
@@ -88,5 +103,9 @@ mod test {
             let (val, val_id) = hf_iter_result;
             assert_eq!(&val, expected, "Failed at val_id: {:?}", val_id);
         }
+        #[cfg(not(feature = "hs_33500"))]
+        assert!(bp.count_empty_frames() > 0 && bp.disk_size() == 0);
+        #[cfg(feature = "hs_33500")]
+        assert!(bp.disk_size() > 0, "Eviction not working");
     }
 }

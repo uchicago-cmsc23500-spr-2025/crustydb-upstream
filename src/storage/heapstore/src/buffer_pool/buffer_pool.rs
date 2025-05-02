@@ -165,7 +165,7 @@ impl BufferPool {
     /// Choose a frame to be evicted.
     fn choose_eviction_candidate(&self) -> Option<FrameWriteGuard> {
         // 33550 ONLY
-        //TODO last milestone NOT hs
+        //TODO milestone hs
         None
     }
 
@@ -867,6 +867,26 @@ impl BufferPool {
                 assert_eq!(key.page_id, page_id);
             }
         }
+    }
+
+    pub fn count_empty_frames(&self) -> usize {
+        let frames = unsafe { &*self.frames.get() };
+        let mut count = 0;
+        for frame in frames.iter() {
+            if frame.read().page_id().is_none() {
+                count += 1;
+            }
+        }
+        count
+    }
+
+    pub fn disk_size(&self) -> usize {
+        // For each container, get the size of the file
+        let mut size = 0;
+        for (_, c) in self.cfc.iter() {
+            size += c.num_pages_in_disk();
+        }
+        size as usize
     }
 }
 

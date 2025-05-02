@@ -48,6 +48,10 @@ impl Container {
         self.page_count.load(Ordering::Relaxed)
     }
 
+    pub fn num_pages_in_disk(&self) -> PageId {
+        self.base_file.num_pages().try_into().unwrap()
+    }
+
     pub fn inc_page_count(&self, count: usize) -> PageId {
         self.page_count
             .fetch_add(count as PageId, Ordering::Relaxed)
@@ -192,6 +196,13 @@ impl ContainerFileCatalog {
                 std::fs::remove_file(file_path).unwrap();
             }
         }
+    }
+
+    // Iterate over all the containers
+    pub fn iter(&self) -> impl Iterator<Item = (ContainerId, Arc<Container>)> + '_ {
+        self.containers
+            .iter()
+            .map(|c| (*c.key(), c.value().clone()))
     }
 }
 
