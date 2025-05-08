@@ -146,6 +146,95 @@ mod tests {
     }
 
     #[test]
+    fn sm_shutdown_then_add_vals() {
+        // create path if it doesn't exist
+        let config: &'static ServerConfig = Box::leak(Box::new(ServerConfig::temporary()));
+        let t = TransactionId::new();
+        let instance1 = get_sm::<HeapStorageManager>(config);
+
+        let mut rng = get_rng();
+        let expected1: Vec<Vec<u8>> = (0..100)
+            .map(|_| {
+                let random_int = gen_random_int(&mut rng, 50, 100);
+                get_random_byte_vec(&mut rng, random_int)
+            })
+            .collect();
+        let cid = 1;
+        instance1.create_table(cid).unwrap();
+        let _val_ids = instance1.insert_values(cid, expected1.clone(), t);
+        instance1.shutdown();
+        drop(instance1);
+
+        let instance2 = get_sm::<HeapStorageManager>(config);
+
+        // add more values to check accuracy across spin-ups
+        let mut rng = get_rng();
+        let expected2: Vec<Vec<u8>> = (0..100)
+            .map(|_| {
+                let random_int = gen_random_int(&mut rng, 50, 100);
+                get_random_byte_vec(&mut rng, random_int)
+            })
+            .collect();
+        let cid = 1;
+        let _val_ids = instance2.insert_values(cid, expected2.clone(), t);
+        let result: Vec<Vec<u8>> = instance2.get_iterator(cid, t, RO).map(|(a, _)| a).collect();
+
+        let mut expected = expected1;
+        expected.extend(expected2);
+        assert!(compare_unordered(&expected, &result));
+        instance2.reset().unwrap();
+    }
+
+    #[test]
+    fn sm_shutdown_check_for_wasted_page() {
+        // create path if it doesn't exist
+        let config: &'static ServerConfig = Box::leak(Box::new(ServerConfig::temporary()));
+        let t = TransactionId::new();
+        let instance1 = get_sm::<HeapStorageManager>(config);
+
+        let mut rng = get_rng();
+        let expected1: Vec<Vec<u8>> = (0..100)
+            .map(|_| {
+                let random_int = gen_random_int(&mut rng, 50, 100);
+                get_random_byte_vec(&mut rng, random_int)
+            })
+            .collect();
+        let cid = 1;
+        instance1.create_table(cid).unwrap();
+        let _val_ids = instance1.insert_values(cid, expected1.clone(), t);
+        instance1.shutdown();
+        drop(instance1);
+
+        let instance2 = get_sm::<HeapStorageManager>(config);
+
+        // add more values
+        let mut rng = get_rng();
+        let expected2: Vec<Vec<u8>> = (0..100)
+            .map(|_| {
+                let random_int = gen_random_int(&mut rng, 50, 100);
+                get_random_byte_vec(&mut rng, random_int)
+            })
+            .collect();
+        let cid = 1;
+        let _val_ids = instance2.insert_values(cid, expected2.clone(), t);
+        let result: Vec<Vec<u8>> = instance2.get_iterator(cid, t, RO).map(|(a, _)| a).collect();
+        let mut expected = expected1;
+        expected.extend(expected2);
+        assert!(compare_unordered(&expected, &result));
+
+        // make sure that sm spin up didn't try to write new metadata pages to existing cid in bp
+        // ^ we do this by checking that all data pages are consecutive
+        let mut pid = 0;
+        for (_, vid) in instance2.get_iterator(cid, t, RO) {
+            let cur_pid = vid.page_id.unwrap();
+            assert!(cur_pid - pid == 1 || cur_pid == pid);
+            pid = cur_pid;
+        }
+
+        instance2.reset().unwrap();
+    }
+
+    #[test]
     fn hs_sm_b_iter_small() {
         init();
         let sm = HeapStorageManager::new_test_sm();

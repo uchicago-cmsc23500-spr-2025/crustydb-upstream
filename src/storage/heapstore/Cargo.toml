@@ -38,7 +38,9 @@ libc = {version = "0.2.169"}
 criterion = "0.5"
 temp_testdir = "0.2"
 
-
+[[bench]]
+name = "heap_bench"
+harness = false
 
 [[bench]]
 name = "page_bench"

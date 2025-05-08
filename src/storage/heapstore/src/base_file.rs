@@ -87,6 +87,12 @@ impl BaseFileTrait for BaseFile {
 
     /// Read a page from the file at the given page_id and store it in the given page.
     fn read_page(&self, page_id: PageId, page: &mut Page) -> Result<(), std::io::Error> {
+        debug_assert!(
+            page_id < self.num_pages() as u32,
+            "Page id out of bounds. Try to read page_id {} from file with {} pages",
+            page_id,
+            self.num_pages()
+        );
         self.stats.inc_read_count(self.direct);
         unsafe {
             // Use pread to read the page from the file.

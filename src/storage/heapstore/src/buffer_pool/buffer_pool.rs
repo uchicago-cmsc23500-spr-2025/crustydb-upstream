@@ -897,7 +897,8 @@ pub fn gen_random_pathname(prefix: Option<&str>) -> String {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let dir_name = format!("{}_{}", prefix.unwrap_or("random_path"), ts_in_ns);
+    let salt = rand::random::<u64>(); // Add random salt to make it unique
+    let dir_name = format!("{}_{}_{}", prefix.unwrap_or("random_path"), ts_in_ns, salt);
     dir_name
 }
 
