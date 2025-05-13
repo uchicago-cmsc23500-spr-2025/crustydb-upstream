@@ -263,7 +263,7 @@ mod tests {
 
         // Create a temporary file with some configuration
         let mut file = NamedTempFile::new().unwrap();
-        write!(file, "{{\"host\": \"0.0.0.0\", \"port\": \"9999\", \"server_path\": \"different/path\", \"log_file\": \"different_log_file\", \"log_level\": \"different_level\", \"subsumption_detection\": true}}").unwrap();
+        write!(file, "{{\"host\": \"0.0.0.0\", \"port\": \"9999\", \"db_path\": \"different/path\", \"log_file\": \"different_log_file\", \"log_level\": \"different_level\", \"subsumption_detection\": true}}").unwrap();
 
         // Read the configuration from the file
         let result = ServerConfig::from_file(file.path());
