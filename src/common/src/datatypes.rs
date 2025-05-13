@@ -2,7 +2,10 @@ use crate::attribute::Attribute;
 
 #[allow(unused_imports)]
 use crate::error::{c_err, CrustyError};
+use crate::query::bytecode_expr::{And, FromBool, Or};
+use crate::BinaryOp;
 use chrono::{Duration, NaiveDate};
+use std::ops::{Add, Div, Mul, Sub};
 
 pub fn base_date() -> NaiveDate {
     NaiveDate::from_ymd_opt(1970, 1, 1).unwrap()
@@ -122,6 +125,175 @@ pub enum Field {
     Date(i64),         // Days relative to 1970-01-01
     Bool(bool),
     Null,
+}
+
+impl FromBool for Field {
+    fn from_bool(b: bool) -> Self {
+        Field::Bool(b)
+    }
+}
+
+impl And for Field {
+    fn and(&self, other: &Self) -> Self {
+        match (self, other) {
+            (Field::Bool(a), Field::Bool(b)) => Field::Bool(*a && *b),
+            _ => panic!("Expected bool"),
+        }
+    }
+}
+
+impl Or for Field {
+    fn or(&self, other: &Self) -> Self {
+        match (self, other) {
+            (Field::Bool(a), Field::Bool(b)) => Field::Bool(*a || *b),
+            _ => panic!("Expected bool"),
+        }
+    }
+}
+
+impl Add for Field {
+    type Output = Result<Self, CrustyError>;
+
+    fn add(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Field::BigInt(a), Field::BigInt(b)) => Ok(Field::BigInt(a + b)),
+            (Field::Decimal(a, s_l), Field::Decimal(b, s_r)) => {
+                // We adjust to the larger scale
+                let res_scale = if s_l > s_r { s_l } else { s_r };
+                let adjusted_a = a * 10i64.pow(res_scale - s_l);
+                let adjusted_b = b * 10i64.pow(res_scale - s_r);
+                Ok(Field::Decimal(adjusted_a + adjusted_b, res_scale))
+            }
+            (Field::BigInt(a), Field::Decimal(b, s_r)) => {
+                let adjusted_a = a * 10i64.pow(s_r);
+                Ok(Field::Decimal(adjusted_a + b, s_r))
+            }
+            (Field::Decimal(a, s_l), Field::BigInt(b)) => {
+                let adjusted_b = b * 10i64.pow(s_l);
+                Ok(Field::Decimal(a + adjusted_b, s_l))
+            }
+            _ => panic!("Expected int or decimal"),
+        }
+    }
+}
+
+impl Sub for Field {
+    type Output = Result<Self, CrustyError>;
+
+    fn sub(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Field::BigInt(a), Field::BigInt(b)) => Ok(Field::BigInt(a - b)),
+            (Field::Decimal(a, s_l), Field::Decimal(b, s_r)) => {
+                // We adjust to the larger scale
+                let res_scale = if s_l > s_r { s_l } else { s_r };
+                let adjusted_a = a * 10i64.pow(res_scale - s_l);
+                let adjusted_b = b * 10i64.pow(res_scale - s_r);
+                Ok(Field::Decimal(adjusted_a - adjusted_b, res_scale))
+            }
+            (Field::BigInt(a), Field::Decimal(b, s_r)) => {
+                let adjusted_a = a * 10i64.pow(s_r);
+                Ok(Field::Decimal(adjusted_a - b, s_r))
+            }
+            (Field::Decimal(a, s_l), Field::BigInt(b)) => {
+                let adjusted_b = b * 10i64.pow(s_l);
+                Ok(Field::Decimal(a - adjusted_b, s_l))
+            }
+            _ => Err(c_err("Expected int or decimal")),
+        }
+    }
+}
+
+impl Mul for Field {
+    type Output = Result<Self, CrustyError>;
+
+    fn mul(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Field::BigInt(a), Field::BigInt(b)) => Ok(Field::BigInt(a * b)),
+            (Field::Decimal(a, s_l), Field::Decimal(b, s_r)) => {
+                // We adjust to the larger scale
+                // e.g. 123.456 * 2.34
+                // 123.456 is stored as 123456 with a scale of 3
+                // 2.34 is stored as 234 with a scale of 2
+                // We will compute 123456 * 234 = 28846104.
+                // We will divide 28846104 by the SMALLER scale 10^2, which gives 288461 with rounding.
+                // This result, 288461, represents 288.461 when considering the scale 3.
+                let larger_scale = s_l.max(s_r);
+                let smaller_scale = s_l.min(s_r);
+                let res = (a * b) as f64;
+                let num = (res / 10i64.pow(smaller_scale) as f64).round() as i64;
+                Ok(Field::Decimal(num, larger_scale))
+            }
+            (Field::BigInt(a), Field::Decimal(b, s_r)) => {
+                // We remain the scale unchanged. We round the result to the nearest integer.
+                // e.g. 123 * 2.34
+                // 2.34 is stored as 234 with a scale of 2
+                // We will compute 123 * 234 = 28782 and store it as 28782 with a scale of 2
+                let res = a * b;
+                Ok(Field::Decimal(res, s_r))
+            }
+            (Field::Decimal(a, s_l), Field::BigInt(b)) => {
+                let res = a * b;
+                Ok(Field::Decimal(res, s_l))
+            }
+            _ => Err(c_err("Expected int or decimal")),
+        }
+    }
+}
+
+impl Div for Field {
+    type Output = Result<Self, CrustyError>;
+
+    fn div(self, other: Self) -> Self::Output {
+        match (self, other) {
+            (Field::BigInt(a), Field::BigInt(b)) => {
+                if b == 0 {
+                    return Err(c_err("Division by zero"));
+                }
+                Ok(Field::BigInt(a / b))
+            }
+            (Field::Decimal(a, s_l), Field::Decimal(b, s_r)) => {
+                if b == 0 {
+                    return Err(c_err("Division by zero"));
+                }
+                // We adjust to the larger scale
+                // e.g. 123.456 / 2.34
+                // 123.456 is stored as 123456 with a scale of 3
+                // 2.34 is stored as 234 with a scale of 2
+                // At the end, we want the division result to have scale of 3
+                // Hence, we adjust 123456 to 12345600 by multiplying by the scale 10^2
+                // Now, divide 12345600 by 234, which gives 52728 with rounding.
+                // This result, 52728, represents 52.728 when considering the scale 3.
+
+                // e.g. 123.45 / 2.345
+                // 123.45 is stored as 12345 with a scale of 2
+                // 2.345 is stored as 2345 with a scale of 3
+                // At the end, we want the division result to have scale of 3
+                // Hence, we adjust 12345 to 123450000 by multiplying by the scale 10^4
+                // Now, divide 123450000 by 2345, which gives 52628 with rounding.
+                // This result, 52628, represents 52.628 when considering the scale 3.
+
+                // Hence, the following is true:
+                // s_l + alpha - s_r = max(s_l, s_r)
+                // where alpha is the number of digits you need to multiply the numerator by to get the adjusted numerator
+                // alpha = max(s_l, s_r) - s_l + s_r
+                // In the first example, alpha = 3 - 3 + 2 = 2
+                // In the second example, alpha = 3 - 2 + 3 = 4
+
+                let larger_scale = s_l.max(s_r);
+                let alpha = larger_scale - s_l + s_r;
+                let res = (a * 10i64.pow(alpha)) as f64;
+                let num = (res / b as f64).round() as i64;
+                Ok(Field::Decimal(num, larger_scale))
+            }
+            (Field::BigInt(a), Field::Decimal(b, s_r)) => {
+                Field::Decimal(a, 0) / Field::Decimal(b, s_r)
+            }
+            (Field::Decimal(a, s_l), Field::BigInt(b)) => {
+                Field::Decimal(a, s_l) / Field::Decimal(b, 0)
+            }
+            _ => Err(c_err("Expected int or decimal")),
+        }
+    }
 }
 
 impl Field {
@@ -246,7 +418,7 @@ impl Field {
     pub fn unwrap_int_field(&self) -> i64 {
         match self {
             Field::BigInt(i) => *i,
-            _ => panic!("Expected i32"),
+            _ => panic!("Expected i64"),
         }
     }
 
@@ -441,5 +613,19 @@ impl std::fmt::Display for Field {
             Field::Null => null_string(),
         };
         write!(f, "{}", s)
+    }
+}
+
+pub fn compare_fields(op: BinaryOp, left: &Field, right: &Field) -> bool {
+    match op {
+        BinaryOp::Eq => left == right,
+        BinaryOp::Neq => left != right,
+        BinaryOp::Gt => left > right,
+        BinaryOp::Ge => left >= right,
+        BinaryOp::Lt => left < right,
+        BinaryOp::Le => left <= right,
+        BinaryOp::And => left.and(right).unwrap_bool_field(),
+        BinaryOp::Or => left.or(right).unwrap_bool_field(),
+        _ => panic!("Unsupported comparison operation"),
     }
 }

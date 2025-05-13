@@ -4,6 +4,8 @@ extern crate serde;
 #[macro_use]
 extern crate log;
 
+pub use query::logical_expr;
+pub use query::physical_expr;
 pub mod attribute;
 pub use attribute::Attribute;
 pub use attribute::Constraint;
@@ -34,6 +36,9 @@ pub const MAX_COLUMNS: usize = 100;
 // dir name of manager table
 pub const MANAGERS_DIR_NAME: &str = "managers";
 
+// dir name of manager table
+pub const QUERY_CACHES_DIR_NAME: &str = "query_caches";
+
 pub mod prelude {
     pub use crate::error::CrustyError;
     pub use crate::ids::Permissions;
@@ -41,9 +46,14 @@ pub mod prelude {
         ColumnId, ContainerId, LogicalTimeStamp, Lsn, PageId, SlotId, StateType, TidType,
         TransactionId, ValueId,
     };
+
+    pub use crate::datatypes::{DataType, Field};
+    pub use crate::table::TableInfo;
+    pub use crate::{table::TableSchema, tuple::Tuple};
 }
 
 pub use crate::error::{ConversionError, CrustyError};
 
 pub use crate::datatypes::{DataType, Field};
+pub use crate::query::operation::{AggOp, BinaryOp};
 pub use query::query_result::QueryResult;

@@ -200,6 +200,17 @@ We have included a sample script that you would invoke the following way:
 cargo run -p cli-crusty -- -s test-client-script
 ```
 
+### Shutdown
+
+Note that shutting down the server is not automatic. You will need to
+manually shut down the server by sending a \shutdown command from the client
+or pressing Ctrl-C in the client terminal (Ctrl-D will disconnect the client but leave the server running).
+This allows for a clean shutdown of the server and the database.
+
+A non-clean shutdown of the server will likely leave the database in an inconsistent state.
+You will need to clean the database by removing the `crusty_data` directory
+and re-running the server (`rm -rf crusty_data/`). 
+
 ## (Reminder from Primer) Debugging Rust Programs
 
 Debugging is a crucial skill you should learn (if you don't know yet) in order

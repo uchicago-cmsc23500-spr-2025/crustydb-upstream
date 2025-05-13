@@ -15,10 +15,10 @@ pub struct ServerConfig {
     /// Server port number
     #[clap(short = 'p', long = "port", default_value = "3333")]
     pub port: String,
-    /// Path where DB is stored
+    /// Path where server info (all DB, managers, etc. info) is stored
     #[clap(
         short = 'd',
-        long = "db_path",
+        long = "server_path",
         default_value = "crusty_data/persist/default/"
     )]
     pub db_path: PathBuf,
@@ -26,7 +26,7 @@ pub struct ServerConfig {
     #[clap(short = 'l', long = "log_file", default_value = "")]
     pub log_file: String,
     /// Log level
-    #[clap(short = 'v', long = "log_level", default_value = "warning")]
+    #[clap(short = 'v', long = "log_level", default_value = "warn")]
     pub log_level: String,
     /// Query subsumption detection flag (include for val = true)
     #[clap(short = 'q', long = "query-subplan-detection")]
@@ -150,6 +150,9 @@ pub struct ClientConfig {
     /// Server port number
     #[clap(short = 'p', long = "port", default_value = "")]
     pub port: String,
+    /// Optional script to run
+    #[clap(short = 's', long = "script", default_value = "")]
+    pub script: String,
 }
 
 impl Default for ClientConfig {
@@ -157,6 +160,7 @@ impl Default for ClientConfig {
         ClientConfig {
             host: "127.0.0.1".to_owned(),
             port: "3333".to_owned(),
+            script: "".to_owned(),
         }
     }
 }
@@ -170,19 +174,20 @@ impl ClientConfig {
         }
 
         // Load from ServerConfig
-        let server_config = ServerConfig::from_command_line();
+        // let server_config = ServerConfig::from_command_line();
 
         ClientConfig {
             host: if !cli_config.host.is_empty() {
                 cli_config.host
             } else {
-                server_config.host
+                "127.0.0.1".to_owned()
             },
             port: if !cli_config.port.is_empty() {
                 cli_config.port
             } else {
-                server_config.port
+                "3333".to_owned()
             },
+            script: cli_config.script,
         }
     }
 }
@@ -258,7 +263,7 @@ mod tests {
 
         // Create a temporary file with some configuration
         let mut file = NamedTempFile::new().unwrap();
-        write!(file, "{{\"host\": \"0.0.0.0\", \"port\": \"9999\", \"db_path\": \"different/path\", \"log_file\": \"different_log_file\", \"log_level\": \"different_level\", \"subsumption_detection\": true}}").unwrap();
+        write!(file, "{{\"host\": \"0.0.0.0\", \"port\": \"9999\", \"server_path\": \"different/path\", \"log_file\": \"different_log_file\", \"log_level\": \"different_level\", \"subsumption_detection\": true}}").unwrap();
 
         // Read the configuration from the file
         let result = ServerConfig::from_file(file.path());

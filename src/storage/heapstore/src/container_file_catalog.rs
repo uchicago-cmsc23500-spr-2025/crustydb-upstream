@@ -1,4 +1,8 @@
-use crate::base_file::{BaseFile, BaseFileTrait};
+#[cfg(not(feature = "mock"))]
+use crate::base_file::BaseFile;
+use crate::base_file::BaseFileTrait;
+#[cfg(feature = "mock")]
+use crate::base_file_mock::BaseFileMock as BaseFile;
 use crate::buffer_pool::mem_pool_trait::MemPoolStatus;
 use crate::file_stats::FileStats;
 use crate::page::Page;

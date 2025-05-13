@@ -27,7 +27,16 @@ chrono = "0.4"
 tempfile = "3.2"
 clap = {version = "4.5", features = ["derive"]}
 
-
 [features]
 mvcc = []
 inlinecc = ["mvcc"]
+
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "tuple_bench"
+harness = false
+
+[profile.bench]
+lto = false
