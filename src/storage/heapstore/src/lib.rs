@@ -9,7 +9,7 @@ extern crate serde;
 mod base_file;
 mod base_file_mock;
 mod base_file_tests;
-mod buffer_pool;
+pub mod buffer_pool;
 mod container_file_catalog;
 pub mod file_stats;
 mod heap_file;

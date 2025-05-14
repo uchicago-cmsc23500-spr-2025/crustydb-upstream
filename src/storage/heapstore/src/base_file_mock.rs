@@ -8,14 +8,14 @@ use crate::{base_file::BaseFileTrait, file_stats::FileStats, page::Page};
 /// BaseFileMock is a mock implementation of the BaseFileTrait.
 pub struct BaseFileMock {
     num_pages: AtomicUsize,
-    spin_time_ms: u64,
     c_id: ContainerId,
     stats: FileStats,
     mock_page: Page,
     direct: bool,
 }
 
-pub const SPIN_TIME_MS: u64 = 2;
+pub const SPIN_TIME_READ_MICRO_SEC: f64 = 2.94; // 340K IOPS
+pub const SPIN_TIME_WRITE_MICRO_SEC: f64 = 3.64; // 275K IOPS
 
 impl BaseFileMock {
     #[allow(dead_code)]
@@ -30,7 +30,6 @@ impl BaseFileMock {
         Ok(BaseFileMock {
             num_pages: AtomicUsize::new(0),
             c_id,
-            spin_time_ms: SPIN_TIME_MS,
             stats: FileStats::new(),
             mock_page,
             direct: true,
@@ -54,22 +53,22 @@ impl BaseFileTrait for BaseFileMock {
     fn read_page(&self, page_id: u32, page: &mut Page) -> Result<(), std::io::Error> {
         self.stats.inc_read_count(self.direct);
         // Simulate a delay for the read operation
-        if self.spin_time_ms > 0 {
-            std::thread::sleep(std::time::Duration::from_millis(self.spin_time_ms));
-        }
-        page.copy_from_slice(&self.mock_page.data);
+        std::thread::sleep(std::time::Duration::from_nanos(
+            (SPIN_TIME_READ_MICRO_SEC * 1000.0) as u64,
+        ));
+        page.data.copy_from_slice(&self.mock_page.data);
         page.set_page_id(page_id);
         Ok(())
     }
 
     fn write_page(&self, page_id: u32, _page: &Page) -> Result<(), std::io::Error> {
         self.stats.inc_write_count(self.direct);
-        if page_id as usize > self.num_pages() {
-            self.num_pages.store(page_id as usize, Ordering::Relaxed);
-        }
-        if self.spin_time_ms > 0 {
-            std::thread::sleep(std::time::Duration::from_millis(self.spin_time_ms));
-        }
+        // Atomic maximum to ensure thread safety
+        self.num_pages
+            .fetch_max(page_id as usize, Ordering::Relaxed);
+        std::thread::sleep(std::time::Duration::from_nanos(
+            (SPIN_TIME_WRITE_MICRO_SEC * 1000.0) as u64,
+        ));
         Ok(())
     }
 

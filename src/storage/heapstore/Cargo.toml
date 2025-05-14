@@ -45,3 +45,7 @@ harness = false
 [[bench]]
 name = "page_bench"
 harness = false
+
+[[bench]]
+name = "bp_bench"
+harness = false
