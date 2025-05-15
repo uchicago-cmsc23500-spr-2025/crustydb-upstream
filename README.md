@@ -96,10 +96,10 @@ This is the basic process for starting a database and connecting to it via the C
     $ cargo run --bin server
     ```
 
-2. Start a client
+2. Start a client with logging enabled to see output (this is in client.sh)
 
     ```
-    $ cargo run --bin cli-crusty
+    $ RUST_LOG=info cargo run --bin cli-crusty
     ```
 
 For convenience we have provided some shell scripts to run the server and client. The server has a debug and info mode for the logger.
