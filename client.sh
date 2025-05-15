@@ -1,1 +1,1 @@
-cargo run --bin cli-crusty
+RUST_LOG=info cargo run --bin cli-crusty
