@@ -228,7 +228,6 @@ impl DatabaseState {
         query_registrar_info_path.push(&self.managers.config.db_path);
         query_registrar_info_path.push(QUERY_CACHES_DIR_NAME);
         query_registrar_info_path.push(self.id.to_string());
-        println!("{}", query_registrar_info_path.to_str().unwrap());
         fs::remove_dir_all(query_registrar_info_path).ok();
 
         let mut containers = self.container_vec.write().unwrap();

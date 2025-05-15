@@ -12,7 +12,7 @@ fn main() {
     println!("Succeeded tests: {:?}", succeeded);
     println!("Failed tests: {:?}", failed);
 
-    if failed.len() > 0 {
+    if !failed.is_empty() {
         panic!("Some tests failed");
     }
 }

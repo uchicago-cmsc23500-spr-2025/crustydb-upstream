@@ -171,7 +171,7 @@ pub fn start_server(config: &'static ServerConfig) -> thread::JoinHandle<()> {
 }
 
 pub fn is_excluded(file_name: &str) -> bool {
-    let excluded_files = vec![
+    let excluded_files = [
         // "filter1",
         // "filter2",
         // "table_creation",
