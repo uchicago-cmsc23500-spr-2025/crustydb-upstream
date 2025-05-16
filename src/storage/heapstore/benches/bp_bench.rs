@@ -1,10 +1,10 @@
 // benches/ops_bench.rs
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use heapstore::buffer_pool::{
-    buffer_pool::get_test_bp,
-    buffer_pool::BufferPool,
+    buffer_pool::{gen_random_pathname, BufferPool},
     mem_pool_trait::{MemPool, PageFrameId},
 };
+use heapstore::container_file_catalog::ContainerFileCatalog;
 use std::{
     fs::File,
     io::{self, BufRead, BufReader},
@@ -30,7 +30,7 @@ fn parse_ops<P: AsRef<std::path::Path>>(path: P) -> io::Result<Vec<Op>> {
     let reader = BufReader::new(file);
 
     let mut vec = Vec::new();
-    for (_i, line) in reader.lines().enumerate() {
+    for line in reader.lines() {
         // if _i % 1000 == 0 {
         //     println!("Parsed {} lines", i);
         // }
@@ -92,10 +92,18 @@ fn bench_eviction_policy(c: &mut Criterion, file_name: &str) {
     // ───── actual benchmark ─────────────────────────────────────────────
     c.bench_function(&bench_name, |b| {
         b.iter_batched_ref(
-            || get_test_bp(64 * 1024),
+            || {
+                let base_dir = gen_random_pathname(Some("bench_tpcc"));
+                let cfc = Arc::new(ContainerFileCatalog::new(base_dir, true).unwrap());
+                for i in 0..15 {
+                    // Create TPC-C tables and add 10000 pages to each.
+                    cfc.register_container(i, false);
+                    cfc.get_container(i).inc_page_count(10000);
+                }
+                Arc::new(BufferPool::new(8 * 1024, cfc).unwrap())
+            },
             |bp| {
-                let res = simulate_tpcc(black_box(bp), black_box(&ops));
-                black_box(res);
+                simulate_tpcc(black_box(bp), black_box(&ops));
             },
             BatchSize::SmallInput,
         )

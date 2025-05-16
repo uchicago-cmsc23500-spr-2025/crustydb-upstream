@@ -10,7 +10,7 @@ mod base_file;
 mod base_file_mock;
 mod base_file_tests;
 pub mod buffer_pool;
-mod container_file_catalog;
+pub mod container_file_catalog;
 pub mod file_stats;
 mod heap_file;
 mod heap_file_tests;

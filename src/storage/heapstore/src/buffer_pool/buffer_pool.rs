@@ -53,10 +53,18 @@ impl PageToFrame {
     }
 
     pub fn insert(&mut self, p_key: ContainerPageId, frame_id: usize) {
-        self.map
+        if self
+            .map
             .entry(p_key.c_id)
             .or_default()
-            .insert(p_key.page_id, frame_id);
+            .insert(p_key.page_id, frame_id)
+            .is_some()
+        {
+            panic!(
+                "Duplicate page id: {} in container: {}",
+                p_key.page_id, p_key.c_id
+            );
+        }
     }
 
     pub fn remove(&mut self, p_key: &ContainerPageId) -> Option<usize> {
