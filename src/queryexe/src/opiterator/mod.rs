@@ -54,7 +54,7 @@ pub trait OpIterator {
     /// Therefore a typical implementation of open would be:
     /// ```
     /// fn open(&mut self) -> Result<(), CrustyError> {
-    ///    if self.open {
+    ///    if !self.open {
     ///       // initialize the states
     ///       self.open = true;
     ///   }
